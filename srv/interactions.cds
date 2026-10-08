@@ -19,8 +19,17 @@ service CatalogService {
             title: String;
             children: array of {};
         };
+        catalogs: array of {
+            id: String;
+            type: String;
+            title: String;
+            description: String;
+            appCount: Integer;
+            children: array of {};
+        };
         statistics: {
             totalRoles: Integer;
+            totalCatalogs: Integer;
             totalSpaces: Integer;
             totalPages: Integer;
             totalApps: Integer;
@@ -35,8 +44,17 @@ service CatalogService {
             title: String;
             children: array of {};
         };
+        catalogs: array of {
+            id: String;
+            type: String;
+            title: String;
+            description: String;
+            appCount: Integer;
+            children: array of {};
+        };
         statistics: {
             totalRoles: Integer;
+            totalCatalogs: Integer;
             totalSpaces: Integer;
             totalPages: Integer;
             totalApps: Integer;

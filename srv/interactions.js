@@ -195,6 +195,21 @@ function resolveTextsTitle(texts) {
 }
 
 
+function resolveCdmPlaceholderTitle(cdm) {
+    const texts = cdm?.texts;
+    if (!texts || Array.isArray(texts)) return null;
+    const placeholder = cdm?.identification?.title || '';
+    const key = placeholder.match(/^\{\{(.+)\}\}$/)?.[1];
+    const keys = [key, 'appTitle', 'cdm|identification|title'].filter(Boolean);
+    for (const k of keys) {
+        const value = texts[k]?.value;
+        const title = value?.[''] || value?.en;
+        if (title && !title.startsWith('{{')) return title;
+    }
+    return null;
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Parseert S4HANA CDM response en berekent het Workzone-compatible ID.
 //
@@ -253,8 +268,8 @@ class WorkzoneAnalyzer {
     constructor() {
         this.data = {
             spaces: [], workpages: [], relations_sp_wp: [],
-            business_apps: [], roles: [], metadata: {},
-            direct_role_relations: {}
+            business_apps: [], roles: [], catalogs: [], metadata: {},
+            direct_role_relations: {}, catalog_relations: {}
         };
     }
 
@@ -303,6 +318,12 @@ class WorkzoneAnalyzer {
                 this.data.workpages = content;
             } else if (name.includes('1_DataFile_SP-WP.json')) {
                 this.data.relations_sp_wp = content;
+            } else if (name.toLowerCase().includes('catalog') && name.endsWith('.json')) {
+                if (name.toLowerCase().includes('relations')) {
+                    if (content?.id) this.data.catalog_relations[content.id] = content.relations || {};
+                } else if (Array.isArray(content)) {
+                    this.data.catalogs.push(...content);
+                }
             } else if (name.toLowerCase().includes('businessapp') && name.endsWith('.json')) {
                 if (Array.isArray(content)) this.data.business_apps.push(...content);
             } else if (name.toLowerCase().includes('role') && name.endsWith('.json')) {
@@ -324,13 +345,20 @@ class WorkzoneAnalyzer {
             if (!id) return;
             const title = resolveTextsTitle(app.cdm?.texts) ||
                           resolveTextsTitle(app.texts) ||
-                          app.cdm?.texts?.['cdm|identification|title']?.value?.[''] ||
+                          resolveCdmPlaceholderTitle(app.cdm) ||
                           app.cdm?.identification?.title;
             if (title && !title.startsWith('{{')) localAppTitleMap[id] = title;
         });
 
         // Gecombineerde lookup: CDM API titels + lokale ZIP titels
         const allAppTitles = { ...localAppTitleMap, ...appTitleMap };
+
+        // App lookup per ID voor de bron (provider) van een app
+        const businessAppById = {};
+        this.data.business_apps.forEach(app => {
+            const id = app.cdm?.identification?.id;
+            if (id) businessAppById[id] = app;
+        });
 
         // Workpage lookup per ID — prefereer 'en', val terug op 'master' als er
         // geen en-vertaling bestaat (anders verdwijnen niet-vertaalde pages stilletjes).
@@ -380,7 +408,7 @@ class WorkzoneAnalyzer {
                 vizIds.forEach(appId => {
                     const bareId = extractHexAppId(appId);
                     const title = allAppTitles[appId] || (bareId && allAppTitles[bareId]) || this._friendlyName(appId);
-                    pageNode.children.push({ id: appId, type: 'app', title, fullId: appId });
+                    pageNode.children.push({ id: appId, type: 'app', title, fullId: appId, providerId: this._appSource(appId, businessAppById) });
                 });
 
                 spaceNode.children.push(pageNode);
@@ -423,7 +451,7 @@ class WorkzoneAnalyzer {
                 appIds.forEach(appId => {
                     const bareId = extractHexAppId(appId);
                     const title = allAppTitles[appId] || (bareId && allAppTitles[bareId]) || this._friendlyName(appId);
-                    children.push({ id: appId, type: 'app', title, fullId: appId });
+                    children.push({ id: appId, type: 'app', title, fullId: appId, providerId: this._appSource(appId, businessAppById) });
                     totalApps++;
                 });
 
@@ -439,7 +467,8 @@ class WorkzoneAnalyzer {
                         children.push({
                             id: app.id, type: 'app',
                             title: app.title || app.id,
-                            fullId: app.id
+                            fullId: app.id,
+                            providerId: providerId
                         });
                         totalApps++;
                     });
@@ -468,14 +497,40 @@ class WorkzoneAnalyzer {
             });
         });
 
+        const catalogsHierarchy = this.data.catalogs.map(cat => {
+            const catId = cat.cdm?.identification?.id;
+            if (!catId) return null;
+
+            const appIds = new Set([
+                ...(this.data.catalog_relations[catId]?.businessapp || []),
+                ...(cat.cdm?.relations?.viz || []).map(v => v.target?.id).filter(Boolean)
+            ]);
+            const children = [...appIds].map(appId => {
+                const bareId = extractHexAppId(appId);
+                const title = allAppTitles[appId] || (bareId && allAppTitles[bareId]) || this._friendlyName(appId);
+                return { id: appId, type: 'app', title, fullId: appId, providerId: this._appSource(appId, businessAppById) };
+            });
+
+            return {
+                id: catId, type: 'catalog',
+                title: cat.cdm?.texts?.['cdm|identification|title']?.value?.[''] || catId,
+                description: cat.cdm?.texts?.['cdm|identification|description']?.value?.[''] || '',
+                fullId: catId,
+                appCount: children.length,
+                children
+            };
+        }).filter(Boolean);
+
         if (enriched + notEnriched > 0) {
             console.log(`Backend rollen: ${enriched} met apps van S4HANA, ${notEnriched} zonder (Content Package of onbereikbaar)`);
         }
 
         return {
             roles: rolesHierarchy,
+            catalogs: catalogsHierarchy,
             statistics: {
                 totalRoles:      rolesHierarchy.length,
+                totalCatalogs:   catalogsHierarchy.length,
                 totalSpaces:     Object.keys(spaceDetails).length,
                 totalPages:      Object.keys(workpageById).length,
                 totalApps:       rolesHierarchy.reduce((s, r) => s + (r.totalApps || 0), 0),
@@ -483,6 +538,29 @@ class WorkzoneAnalyzer {
                 backendEmpty:    notEnriched
             }
         };
+    }
+
+    
+    _appSource(appId, businessAppById) {
+        if (!appId) return '';
+        const bareId = appId.split('#')[0];
+        const app = businessAppById[bareId];
+
+        if (app) {
+            const providerId = app.cdm?.identification?.providerId;
+            if (providerId === 'saas_approuter') return 'HTML5';
+            if (providerId) return providerId;
+            const destination = app.cdm?.payload?.targetAppConfig?.['sap.app']?.destination;
+            return destination ? `Local → ${destination}` : 'Local';
+        }
+
+        const hexMatch = bareId.match(/^(.+?)_[0-9A-Fa-f]{32}$/);
+        if (hexMatch) return hexMatch[1].toUpperCase();
+        if (bareId.startsWith('saas_approuter_')) return 'HTML5';
+        const packageId = bareId.split('_')[0];
+        if (bareId.includes('_') && packageId.includes('.')) return packageId;
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bareId)) return 'Local (niet in export)';
+        return '';
     }
 
     _friendlyName(id) {

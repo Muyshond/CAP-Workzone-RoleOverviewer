@@ -3,11 +3,12 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core"
     xmlns:table="sap.ui.table"
+    xmlns:rowmodes="sap.ui.table.rowmodes"
     displayBlock="true">
 
-    <Page title="{i18n>pageTitle}" class="sapUiResponsiveContentPadding">
+    <Page title="{i18n>pageTitle}" class="sapUiResponsiveContentPadding" enableScrolling="false">
         <content>
-            <VBox>
+            <VBox height="100%">
 
                 <Panel
                     backgroundDesign="Solid"
@@ -73,16 +74,15 @@
 
 <VBox height="1rem" />
 
-                <Panel
-                    backgroundDesign="Solid"
-                    style="border:1px solid #e4e4e4;border-radius:8px;margin-top:0.75rem;">
-                    <content>
-                        <VBox>
+                <VBox renderType="Bare" class="overviewCard">
+                    <layoutData>
+                        <FlexItemData growFactor="1" baseSize="0" minHeight="0"/>
+                    </layoutData>
 
                             <Panel headerText="{i18n>statisticsTitle}" style="border:none;border-bottom:1px solid #e4e4e4;border-radius:0;">
                                 <content>
                                     <HBox justifyContent="SpaceBetween" class="sapUiSmallMargin">
-                                        <VBox class="sapUiSmallMarginEnd" width="24%">
+                                        <VBox class="sapUiSmallMarginEnd" width="19%">
                                             <HBox alignItems="Center" class="sapUiTinyMarginBottom">
                                                 <core:Icon src="sap-icon://role" color="#000000" size="2rem" class="sapUiTinyMarginEnd"/>
                                                 <VBox>
@@ -91,7 +91,7 @@
                                                 </VBox>
                                             </HBox>
                                         </VBox>
-                                        <VBox class="sapUiSmallMarginEnd" width="24%">
+                                        <VBox class="sapUiSmallMarginEnd" width="19%">
                                             <HBox alignItems="Center" class="sapUiTinyMarginBottom">
                                                 <core:Icon src="sap-icon://home" color="#0070F2" size="2rem" class="sapUiTinyMarginEnd"/>
                                                 <VBox>
@@ -100,21 +100,30 @@
                                                 </VBox>
                                             </HBox>
                                         </VBox>
-                                        <VBox class="sapUiSmallMarginEnd" width="24%">
+                                        <VBox class="sapUiSmallMarginEnd" width="19%">
                                             <HBox alignItems="Center" class="sapUiTinyMarginBottom">
-                                                <core:Icon src="sap-icon://document" color="#6C6C6C" size="2rem" class="sapUiTinyMarginEnd"/>
+                                                <core:Icon src="sap-icon://document" color="Critical" size="2rem" class="sapUiTinyMarginEnd"/>
                                                 <VBox>
                                                     <Text text="{i18n>statPages}" class="sapUiTinyText"/>
                                                     <Title text="{/statistics/totalPages}" level="H2"/>
                                                 </VBox>
                                             </HBox>
                                         </VBox>
-                                        <VBox width="24%">
+                                        <VBox class="sapUiSmallMarginEnd" width="19%">
                                             <HBox alignItems="Center" class="sapUiTinyMarginBottom">
-                                                <core:Icon src="sap-icon://product" color="#32363A" size="2rem" class="sapUiTinyMarginEnd"/>
+                                                <core:Icon src="sap-icon://product" color="Positive" size="2rem" class="sapUiTinyMarginEnd"/>
                                                 <VBox>
                                                     <Text text="{i18n>statApps}" class="sapUiTinyText"/>
                                                     <Title text="{/statistics/totalApps}" level="H2"/>
+                                                </VBox>
+                                            </HBox>
+                                        </VBox>
+                                        <VBox width="19%">
+                                            <HBox alignItems="Center" class="sapUiTinyMarginBottom">
+                                                <core:Icon src="sap-icon://course-book" color="#8E44AD" size="2rem" class="sapUiTinyMarginEnd"/>
+                                                <VBox>
+                                                    <Text text="{i18n>statCatalogs}" class="sapUiTinyText"/>
+                                                    <Title text="{/statistics/totalCatalogs}" level="H2"/>
                                                 </VBox>
                                             </HBox>
                                         </VBox>
@@ -133,9 +142,15 @@
                                 }"
                                 selectionMode="None"
                                 enableColumnReordering="false"
-                                visibleRowCount="15"
                                 width="100%"
                                 alternateRowColors="true">
+
+                                <table:rowMode>
+                                    <rowmodes:Auto minRowCount="5"/>
+                                </table:rowMode>
+                                <table:layoutData>
+                                    <FlexItemData growFactor="1" baseSize="0" minHeight="0"/>
+                                </table:layoutData>
 
                                 <table:extension>
                                     <SearchField
@@ -160,7 +175,7 @@
 
                                 <table:columns>
 
-                                    <table:Column width="30%" sortProperty="title" filterProperty="title">
+                                    <table:Column width="33%" sortProperty="title" filterProperty="title">
                                         <Label text="{i18n>colName}" design="Bold"/>
                                         <table:template>
                                             <HBox alignItems="Center" class="{= ${highlighted} ? 'highlightedRow' : '' }">
@@ -168,11 +183,13 @@
                                                     src="{= ${type} === 'role'  ? 'sap-icon://role'     :
                                                            ${type} === 'space' ? 'sap-icon://home'     :
                                                            ${type} === 'page'  ? 'sap-icon://document' :
+                                                           ${type} === 'catalog' ? 'sap-icon://course-book' :
                                                            'sap-icon://product' }"
-                                                    color="{= ${type} === 'role'  ? '#000000' :
-                                                              ${type} === 'space' ? '#0070F2' :
-                                                              ${type} === 'page'  ? '#6C6C6C' :
-                                                              '#32363A' }"
+                                                    color="{= ${type} === 'role'  ? '#000000'  :
+                                                              ${type} === 'space' ? '#0070F2'  :
+                                                              ${type} === 'page'  ? 'Critical' :
+                                                              ${type} === 'catalog' ? '#8E44AD' :
+                                                              'Positive' }"
                                                     size="1.2rem"
                                                     class="sapUiTinyMarginEnd"/>
                                                 <FormattedText
@@ -185,7 +202,7 @@
                                         </table:template>
                                     </table:Column>
 
-                                    <table:Column width="25%" sortProperty="id" filterProperty="id">
+                                    <table:Column width="30%" sortProperty="id" filterProperty="id">
                                         <Label text="{i18n>colId}" design="Bold"/>
                                         <table:template>
                                             <FormattedText
@@ -197,19 +214,23 @@
                                         </table:template>
                                     </table:Column>
 
-                                    <table:Column width="8%" hAlign="Center" sortProperty="type" filterProperty="type">
-                                        <Label text="{i18n>colType}" design="Bold"/>
+                                    <table:Column width="15%" sortProperty="providerId" filterProperty="providerId">
+                                        <Label text="{i18n>colProvider}" design="Bold"/>
                                         <table:template>
-                                            <ObjectStatus
-                                                text="{type}"
-                                                state="{= ${type} === 'role'  ? 'None'        :
-                                                         ${type} === 'space' ? 'Information' :
-                                                         ${type} === 'page'  ? 'Warning'     :
-                                                         'Success' }"
-                                                icon="{= ${type} === 'role'  ? 'sap-icon://role'     :
-                                                        ${type} === 'space' ? 'sap-icon://home'     :
-                                                        ${type} === 'page'  ? 'sap-icon://document' :
-                                                        'sap-icon://product' }"/>
+                                            <HBox visible="{= ${type} === 'role' || ${type} === 'app' }" alignItems="Center">
+                                                <core:Icon
+                                                    src="sap-icon://supplier"
+                                                    size="1rem"
+                                                    color="#5E696E"
+                                                    class="sapUiTinyMarginEnd"
+                                                    visible="{= !!${providerId} }"/>
+                                                <FormattedText
+                                                    htmlText="{
+                                                        parts: ['providerId', '/_searchQuery'],
+                                                        formatter: '.formatProviderHighlight'
+                                                    }"
+                                                    width="100%"/>
+                                            </HBox>
                                         </table:template>
                                     </table:Column>
 
@@ -246,32 +267,10 @@
                                         </table:template>
                                     </table:Column>
 
-                                    <table:Column sortProperty="providerId" filterProperty="providerId">
-                                        <Label text="{i18n>colProvider}" design="Bold"/>
-                                        <table:template>
-                                            <HBox visible="{= ${type} === 'role' }" alignItems="Center">
-                                                <core:Icon
-                                                    src="sap-icon://supplier"
-                                                    size="1rem"
-                                                    color="#5E696E"
-                                                    class="sapUiTinyMarginEnd"
-                                                    visible="{= !!${providerId} }"/>
-                                                <FormattedText
-                                                    htmlText="{
-                                                        parts: ['providerId', '/_searchQuery'],
-                                                        formatter: '.formatProviderHighlight'
-                                                    }"
-                                                    width="100%"/>
-                                            </HBox>
-                                        </table:template>
-                                    </table:Column>
-
                                 </table:columns>
                             </table:TreeTable>
 
-                        </VBox>
-                    </content>
-                </Panel>
+                </VBox>
 
             </VBox>
         </content>

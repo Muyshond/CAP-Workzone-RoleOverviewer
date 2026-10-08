@@ -14,6 +14,7 @@ export default class overview extends Controller {
 
     private _sCurrentQuery: string = "";
     private _aOriginalRoles: any[] = [];
+    private _aOriginalCatalogs: any[] = [];
 
     public onInit(): void {
         this.getView()?.addEventDelegate({
@@ -66,6 +67,9 @@ export default class overview extends Controller {
 
             data._searchQuery = "";
             this._aOriginalRoles = JSON.parse(JSON.stringify(data.roles || []));
+            this._aOriginalCatalogs = JSON.parse(JSON.stringify(data.catalogs || []));
+            // Catalogs onderaan in dezelfde boom als de rollen
+            data.roles = this._treeNodes();
 
             this.getView()?.setModel(new JSONModel(data));
 
@@ -95,17 +99,22 @@ export default class overview extends Controller {
         if (!oTable || !oModel) return;
 
         if (this._sCurrentQuery.length > 0) {
-            const aFiltered = this._filterTree(JSON.parse(JSON.stringify(this._aOriginalRoles)), this._sCurrentQuery, false);
+            const aFiltered = this._filterTree(this._treeNodes(), this._sCurrentQuery, false);
             oModel.setProperty("/roles", aFiltered);
             oModel.setProperty("/_searchQuery", this._sCurrentQuery);
             oModel.refresh(true);
             oTable.expandToLevel(10);
         } else {
-            oModel.setProperty("/roles", JSON.parse(JSON.stringify(this._aOriginalRoles)));
+            oModel.setProperty("/roles", this._treeNodes());
             oModel.setProperty("/_searchQuery", "");
             oModel.refresh(true);
             oTable.collapseAll();
         }
+    }
+
+    // Kopie van rollen + catalogs voor de boom (catalogs onderaan)
+    private _treeNodes(): any[] {
+        return JSON.parse(JSON.stringify([...this._aOriginalRoles, ...this._aOriginalCatalogs]));
     }
 
 
@@ -131,7 +140,8 @@ export default class overview extends Controller {
                 this._text("excelStatSpaces", [oStats.totalSpaces ?? ""]),
                 this._text("excelStatPages",  [oStats.totalPages  ?? ""]),
                 this._text("excelStatApps",   [oStats.totalApps   ?? ""]),
-                "", "", "", "", ""
+                this._text("excelStatCatalogs", [oStats.totalCatalogs ?? ""]),
+                "", "", "", ""
             ]);
             rows.push(["", "", "", "", "", "", "", "", ""]);
 
@@ -200,6 +210,7 @@ export default class overview extends Controller {
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Workzone Hierarchy");
+            XLSX.utils.book_append_sheet(wb, this._buildCatalogSheet(XLSX), "Catalogs");
 
             const sDate = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `WorkzoneHierarchy_${sEnv}_${sDate}.xlsx`);
@@ -208,6 +219,29 @@ export default class overview extends Controller {
             console.error("Export mislukt:", error);
             MessageBox.error(this._text("msgExportFailed", [error.message || "Onbekende fout"]));
         }
+    }
+
+    
+    private _buildCatalogSheet(XLSX: any): any {
+        const rows: any[][] = [[
+            this._text("excelColCatalogName"), this._text("excelColCatalogId"), this._text("excelColCatalogDescription"),
+            this._text("excelColAppName"), this._text("excelColAppId")
+        ]];
+
+        for (const catalog of this._aOriginalCatalogs) {
+            const apps = catalog.children || [];
+            const catalogCells = [catalog.title || "", catalog.id || "", catalog.description || ""];
+            if (apps.length === 0) { rows.push([...catalogCells, "", ""]); continue; }
+
+            apps.forEach((app: any, i: number) => {
+                rows.push([...(i === 0 ? catalogCells : ["", "", ""]), app.title || app.id || "", app.id || ""]);
+            });
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws["!cols"] = [{ wch: 35 }, { wch: 40 }, { wch: 40 }, { wch: 35 }, { wch: 55 }];
+        ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+        return ws;
     }
 
     private _makeRow(): any[] { return ["", "", "", "", "", "", "", "", ""]; }
@@ -296,7 +330,7 @@ export default class overview extends Controller {
         const oTable = this.byId("roleTree") as TreeTable;
         const oModel = this.getView()?.getModel() as JSONModel;
         if (!oTable || !oModel) return;
-        oModel.setProperty("/roles", JSON.parse(JSON.stringify(this._aOriginalRoles)));
+        oModel.setProperty("/roles", this._treeNodes());
         oModel.setProperty("/_searchQuery", "");
         oModel.refresh(true);
         oTable.collapseAll();

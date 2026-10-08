@@ -1,1 +1,8 @@
 /* Enter your custom styles here */
+.overviewCard {
+    border: 1px solid #e4e4e4;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    background: var(--sapGroup_ContentBackgroundColor);
+}
