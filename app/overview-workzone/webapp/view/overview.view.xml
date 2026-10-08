@@ -30,7 +30,7 @@
 
                             <VBox style="width:1px;height:2.5rem;background:#c5d9f0;margin:0 1.5rem;"/>
 
-                            <Label text="{i18n>environmentLabel}" class="sapUiTinyMarginEnd" style="font-weight:600;color:#32363A;"/>
+                            <!-- <Label text="{i18n>environmentLabel}" class="sapUiTinyMarginEnd" style="font-weight:600;color:#32363A;"/> -->
                             <Select
                                 id="environmentSelect"
                                 width="110px"
@@ -38,19 +38,20 @@
                                 selectedKey="dev">
                                 <items>
                                     <core:Item key="dev" text="DEV"/>
-                                    <core:Item key="acc" text="ACC"/>
+                                    <core:Item key="tst" text="TST"/>
+                                    <core:Item key="qas" text="QAS"/>
                                     <core:Item key="prd" text="PRD"/>
                                 </items>
                             </Select>
 
-                            <Label text="{i18n>siteIdLabel}" class="sapUiTinyMarginEnd" style="font-weight:600;color:#32363A;"/>
+                            <!-- <Label text="{i18n>siteIdLabel}" class="sapUiTinyMarginEnd" style="font-weight:600;color:#32363A;"/>
                             <Input
                                 id="siteIdInput"
                                 placeholder="{i18n>siteIdPlaceholder}"
                                 value="1af031d9-9029-49a0-9ab5-f880ce5118bb"
                                 width="24rem"
                                 class="sapUiSmallMarginEnd"
-                                submit=".onLoad"/>
+                                submit=".onLoad"/> -->
 
                             <Button
                                 text="{i18n>loadButton}"
@@ -58,17 +59,16 @@
                                 type="Emphasized"
                                 press=".onLoad"/>
                         </HBox>
-                        <HBox >
+                        <!-- <HBox >
                             <Label text="{i18n>environmentHint}" class="sapUiTinyMarginEnd" style="font-weight:600;color:#32363A;"/>
-                        </HBox>
-                        <HBox  >
+                        </HBox> -->
+                        <!-- <HBox  >
                             <FormattedText id="siteIdHints" class="sapUiTinyMargin" htmlText="
                                 &lt;span style='font-size:0.85rem;font-weight:600;color:#5a7fa8;'&gt;{i18n>knownSiteIdsTitle}:&lt;/span&gt;&lt;br/&gt;
-                                &lt;span style='font-size:0.85rem;color:#32363A;'&gt;DEV: 1af031d9-9029-49a0-9ab5-f880ce5118bb&lt;/span&gt;&lt;br/&gt;
-                                &lt;span style='font-size:0.85rem;color:#32363A;'&gt;ACC: —&lt;/span&gt;&lt;br/&gt;
-                                &lt;span style='font-size:0.85rem;color:#32363A;'&gt;PRD: —&lt;/span&gt;
+                                &lt;span style='font-size:0.85rem;color:#32363A;'&gt;1af031d9-9029-49a0-9ab5-f880ce5118bb&lt;/span&gt;&lt;br/&gt;
+                                
                             "/>
-                        </HBox>
+                        </HBox> -->
                     </content>
                 </Panel>
 

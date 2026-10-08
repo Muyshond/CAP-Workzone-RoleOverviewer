@@ -45,8 +45,8 @@ export default class overview extends Controller {
                 oBinding = oModel.bindContext("/analyzeExport(...)");
             } else {
                 const sEnv    = (this.byId("environmentSelect") as Select)?.getSelectedKey() || "dev";
-                const sSiteId = ((this.byId("siteIdInput") as Input)?.getValue() || "").trim();
-
+                //const sSiteId = ((this.byId("siteIdInput") as Input)?.getValue() || "").trim();
+                const sSiteId = "1af031d9-9029-49a0-9ab5-f880ce5118bb";
                 if (!sSiteId) {
                     MessageBox.warning(this._text("msgSiteIdRequired"));
                     return;
